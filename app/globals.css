@@ -1,51 +1,130 @@
 @import "tailwindcss";
 
-/* Design tokens. Use them in Tailwind as bg-surface, text-muted, border-line, bg-accent, etc. */
+/*
+ * ConvoConfidence design tokens — "The Art of Finding Your Voice".
+ * Use them through Tailwind: bg-ivory, text-slate, border-line, bg-lavender-soft, font-display …
+ * The brand pastels (lavender/sage/champagne) are for FILLS and glows. For text on ivory use the
+ * "-ink" variants, which meet WCAG AA contrast.
+ */
 :root {
-  --background: #f7f7f5;
-  --surface: #ffffff;
-  --foreground: #1c1c1e;
-  --muted: #6b6b70;
-  --line: #e4e4e1;
-  --accent: #2f6f5e;
-  --accent-soft: #e3efe9;
-  --accent-foreground: #ffffff;
-  --warn: #9a5b00;
-  --warn-soft: #fdf1dc;
-}
+  --midnight: #0b1020;
+  --midnight-2: #121933;
+  --ivory: #f8f7f2;
+  --paper: #fffefa;
+  --lavender: #baacf7;
+  --sage: #a7dccb;
+  --champagne: #e9d6b8;
+  --slate: #596171;
+  --ink: #161a26;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #121214;
-    --surface: #1c1c1f;
-    --foreground: #ededee;
-    --muted: #a0a0a6;
-    --line: #2e2e33;
-    --accent: #6cc3a6;
-    --accent-soft: #1f3530;
-    --accent-foreground: #0d1f1a;
-    --warn: #f0b55a;
-    --warn-soft: #3a2c14;
-  }
+  --lavender-ink: #5b48c2;
+  --sage-ink: #24705a;
+  --champagne-ink: #7d5c2e;
+  --lavender-soft: #eeeafd;
+  --sage-soft: #e6f4ef;
+  --champagne-soft: #f7efe2;
+  --line: #e6e3d9;
+  --line-strong: #d6d2c4;
+  --danger: #b3412f;
+  --danger-soft: #fbe9e5;
+
+  --shadow-soft: 0 1px 2px rgb(22 26 38 / 0.04), 0 8px 24px -12px rgb(22 26 38 / 0.12);
+  --shadow-lift: 0 2px 4px rgb(22 26 38 / 0.05), 0 18px 40px -18px rgb(22 26 38 / 0.22);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-surface: var(--surface);
-  --color-foreground: var(--foreground);
-  --color-muted: var(--muted);
+  --color-midnight: var(--midnight);
+  --color-midnight-2: var(--midnight-2);
+  --color-ivory: var(--ivory);
+  --color-paper: var(--paper);
+  --color-lavender: var(--lavender);
+  --color-sage: var(--sage);
+  --color-champagne: var(--champagne);
+  --color-slate: var(--slate);
+  --color-ink: var(--ink);
+  --color-lavender-ink: var(--lavender-ink);
+  --color-sage-ink: var(--sage-ink);
+  --color-champagne-ink: var(--champagne-ink);
+  --color-lavender-soft: var(--lavender-soft);
+  --color-sage-soft: var(--sage-soft);
+  --color-champagne-soft: var(--champagne-soft);
   --color-line: var(--line);
-  --color-accent: var(--accent);
-  --color-accent-soft: var(--accent-soft);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-warn: var(--warn);
-  --color-warn-soft: var(--warn-soft);
-  --font-sans: var(--font-geist-sans), "PingFang SC", "Noto Sans SC", system-ui, sans-serif;
-  --font-mono: var(--font-geist-mono);
+  --color-line-strong: var(--line-strong);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-instrument-serif), ui-serif, Georgia, serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+
+  --shadow-soft: var(--shadow-soft);
+  --shadow-lift: var(--shadow-lift);
+
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+html {
+  background: var(--ivory);
+  color: var(--ink);
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--ivory);
+  color: var(--ink);
   font-family: var(--font-sans);
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: var(--lavender);
+  color: var(--midnight);
+}
+
+/* Visible, consistent keyboard focus everywhere. */
+:focus-visible {
+  outline: 2px solid var(--lavender-ink);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+.on-dark :focus-visible,
+.on-dark:focus-visible {
+  outline-color: var(--lavender);
+}
+
+.font-display {
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: -0.01em;
+}
+
+/* Text reveal driven by scroll position (set --reveal from JS, 0 → 1). */
+.reveal {
+  opacity: var(--reveal, 1);
+  transform: translateY(calc((1 - var(--reveal, 1)) * 24px));
+}
+
+/* Subtle film grain for dark sections (CSS fallback when WebGL is unavailable). */
+.grain::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.06;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='0.6'/></svg>");
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .reveal {
+    opacity: 1;
+    transform: none;
+  }
 }

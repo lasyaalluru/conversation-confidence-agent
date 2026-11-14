@@ -1,29 +1,41 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import { NextIntlClientProvider } from "next-intl";
-import { getLocale } from "next-intl/server";
-import Header from "@/components/Header";
+import type { Metadata, Viewport } from "next";
+import { Geist, Geist_Mono, Instrument_Serif } from "next/font/google";
+import { ProgressProvider } from "@/components/providers/ProgressProvider";
 import "./globals.css";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
+const instrumentSerif = Instrument_Serif({
+  variable: "--font-instrument-serif",
+  subsets: ["latin"],
+  weight: "400",
+  style: ["normal", "italic"],
+});
 
 export const metadata: Metadata = {
-  title: "Confidence Coach",
-  description: "Bilingual AI-powered conversation practice and confidence coaching",
+  title: { default: "ConvoConfidence AI — Know the words. Find your voice.", template: "%s · ConvoConfidence AI" },
+  description:
+    "Your personal AI conversation coach for real-life moments — from ordering coffee to speaking up in meetings.",
 };
 
-export default async function RootLayout({ children }: LayoutProps<"/">) {
-  const locale = await getLocale();
+export const viewport: Viewport = {
+  themeColor: "#0B1020",
+};
 
+export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang={locale} className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
+    <html
+      lang="en"
+      className={`${geistSans.variable} ${geistMono.variable} ${instrumentSerif.variable} h-full antialiased`}
+    >
       <body className="min-h-full flex flex-col">
-        {/* Makes translations available to "use client" components via useTranslations() */}
-        <NextIntlClientProvider>
-          <Header />
-          <main className="flex-1 w-full max-w-3xl mx-auto px-4 py-8">{children}</main>
-        </NextIntlClientProvider>
+        <a
+          href="#main"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-full focus:bg-ink focus:px-4 focus:py-2 focus:text-ivory"
+        >
+          Skip to content
+        </a>
+        <ProgressProvider>{children}</ProgressProvider>
       </body>
     </html>
   );
