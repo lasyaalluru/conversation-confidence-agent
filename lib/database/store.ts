@@ -28,9 +28,13 @@ export function nowIso(): string {
   return new Date().toISOString();
 }
 
-/** Apply the user's consent preferences before a session is persisted. */
+/**
+ * Apply the user's consent preferences before a session is persisted.
+ * With transcript storage OFF, the transcript is kept only until feedback has been generated
+ * from it, then dropped (turn count, timings and feedback remain).
+ */
 export function applyConsent(session: PracticeSession, profile: Profile | null): PracticeSession {
-  if (profile?.consent.storeTranscripts === false && session.status !== "in_progress") {
+  if (profile?.consent.storeTranscripts === false && session.feedback) {
     return { ...session, turns: [] };
   }
   return session;

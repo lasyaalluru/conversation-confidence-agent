@@ -46,13 +46,16 @@ export function ProgressProvider({ children }: { children: React.ReactNode }) {
   const storeRef = useRef<ProgressStore | null>(null);
   const [storeKind, setStoreKind] = useState<ProgressStore["kind"]>("local");
   const snapshotRef = useRef(snapshot);
-  snapshotRef.current = snapshot;
+  useEffect(() => {
+    snapshotRef.current = snapshot;
+  }, [snapshot]);
 
   const loadFrom = useCallback(async (store: ProgressStore) => {
     storeRef.current = store;
-    setStoreKind(store.kind);
     try {
-      setSnapshot(await store.load());
+      const data = await store.load();
+      setStoreKind(store.kind);
+      setSnapshot(data);
       setError(null);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Couldn't load your progress");
@@ -64,6 +67,8 @@ export function ProgressProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const supabase = getSupabaseBrowser();
     if (!supabase) {
+      // loadFrom only sets state after an `await` (reading browser storage) — not synchronously.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       void loadFrom(new LocalStore());
       return;
     }

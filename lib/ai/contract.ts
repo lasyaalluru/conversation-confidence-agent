@@ -47,40 +47,29 @@ export const FeedbackRequest = z.object({
 });
 export type FeedbackRequest = z.infer<typeof FeedbackRequest>;
 
+const text = (max: number) => z.string().trim().min(1).max(max);
+
 export const FeedbackResult = z.object({
   /** One or two encouraging sentences. */
-  summary: z.string().min(1).max(500),
+  summary: text(800),
   wentWell: z
-    .array(
-      z.object({
-        title: z.string().min(1).max(80),
-        detail: z.string().min(1).max(400),
-        /** Exact learner words this is based on. */
-        quote: z.string().max(300).nullable(),
-      }),
-    )
+    .array(z.object({ title: text(120), detail: text(800), quote: z.string().max(500).nullable() }))
     .min(1)
-    .max(4),
+    .transform((a) => a.slice(0, 4)),
   improve: z
-    .array(
-      z.object({
-        title: z.string().min(1).max(80),
-        detail: z.string().min(1).max(400),
-        tryThis: z.string().max(200).nullable(),
-      }),
-    )
-    .max(3),
+    .array(z.object({ title: text(120), detail: text(800), tryThis: z.string().max(300).nullable() }))
+    .transform((a) => a.slice(0, 3)),
   alternatives: z
     .array(
       z.object({
-        context: z.string().min(1).max(160),
-        youSaid: z.string().max(300).nullable(),
-        alternative: z.string().min(1).max(200),
-        why: z.string().min(1).max(300),
+        context: text(240),
+        youSaid: z.string().max(500).nullable(),
+        alternative: text(300),
+        why: text(500),
       }),
     )
-    .max(4),
-  reflection: z.object({ title: z.string().min(1).max(100), body: z.string().min(1).max(600) }),
+    .transform((a) => a.slice(0, 4)),
+  reflection: z.object({ title: text(160), body: text(900) }),
 });
 export type FeedbackResult = z.infer<typeof FeedbackResult>;
 
