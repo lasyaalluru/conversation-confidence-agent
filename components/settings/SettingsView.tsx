@@ -125,8 +125,8 @@ export function SettingsView() {
           <p className="font-medium text-ink">What we store</p>
           <ul className="mt-2 list-disc space-y-1 pl-5">
             <li>
-              <strong className="font-medium text-ink">Never stored:</strong> your voice recordings. Audio is sent to the speech-to-text service for
-              transcription and discarded.
+              <strong className="font-medium text-ink">Never stored:</strong> your voice recordings. Speech is turned into text either by your
+              browser&apos;s built-in speech service (Google in Chrome, Apple in Safari) or by our speech-to-text provider, then discarded.
             </li>
             <li>
               <strong className="font-medium text-ink">Stored {p.storeKind === "supabase" ? "in your account" : "in this browser only"}:</strong> your

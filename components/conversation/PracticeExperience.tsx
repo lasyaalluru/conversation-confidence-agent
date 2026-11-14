@@ -20,20 +20,29 @@ import { PreBrief } from "./PreBrief";
 export function PracticeExperience({ scenario, requestedLevel }: { scenario: PlayableScenario; requestedLevel: ComfortLevel | null }) {
   const { ready, profile } = useProgress();
   const [mode, setMode] = useState<AiMode | null>(null);
+  const [serverTranscription, setServerTranscription] = useState<boolean | null>(null);
   const [level, setLevel] = useState<ComfortLevel | null>(requestedLevel);
   const [confidence, setConfidence] = useState<number | null>(null);
   const [started, setStarted] = useState(false);
 
   const profileLevel = profile?.comfortLevel ?? 1;
   const effectiveLevel = level ?? profileLevel;
-  const convo = useConversation(scenario, effectiveLevel, mode);
+  const convo = useConversation(scenario, effectiveLevel, mode, serverTranscription);
 
   useEffect(() => {
     let cancelled = false;
     fetch("/api/status")
       .then((r) => r.json())
-      .then((d: { mode: AiMode }) => !cancelled && setMode(d.mode))
-      .catch(() => !cancelled && setMode("demo"));
+      .then((d: { mode: AiMode; transcription: boolean }) => {
+        if (cancelled) return;
+        setMode(d.mode);
+        setServerTranscription(d.transcription);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setMode("demo");
+        setServerTranscription(false);
+      });
     return () => {
       cancelled = true;
     };
@@ -65,6 +74,7 @@ export function PracticeExperience({ scenario, requestedLevel }: { scenario: Pla
               confidence={confidence}
               onConfidence={setConfidence}
               mode={mode}
+              voiceEngine={convo.voiceEngine}
               recommendedLevel={profileLevel}
               onStart={() => {
                 // Start inside the click handler: browsers (Safari especially) only allow

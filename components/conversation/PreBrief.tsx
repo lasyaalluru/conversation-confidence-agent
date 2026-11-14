@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/Button";
 import { ConfidenceScale } from "@/components/ui/ConfidenceScale";
 import { DemoBadge } from "@/components/ui/primitives";
 import type { AiMode } from "@/lib/ai/contract";
+import type { VoiceEngine } from "@/hooks/useConversation";
 import { COMFORT_LEVELS, getComfortLevel, type ComfortLevel, type PlayableScenario } from "@/lib/scenarios/catalog";
 
 /** Before practice: title, length, comfort level (overridable), one convention, confidence rating. */
@@ -14,6 +15,7 @@ export function PreBrief({
   confidence,
   onConfidence,
   mode,
+  voiceEngine,
   onStart,
   recommendedLevel,
 }: {
@@ -23,6 +25,7 @@ export function PreBrief({
   confidence: number | null;
   onConfidence: (n: number) => void;
   mode: AiMode | null;
+  voiceEngine: VoiceEngine;
   onStart: () => void;
   recommendedLevel: ComfortLevel;
 }) {
@@ -97,8 +100,9 @@ export function PreBrief({
             <div className="flex flex-col gap-2 rounded-2xl bg-champagne-soft p-4 text-sm text-champagne-ink">
               <DemoBadge className="self-start" />
               <p>
-                No AI key is configured, so {scenario.character.name}&apos;s replies are scripted and feedback is rule-based.
-                Voice transcription also needs a key — type your replies in Demo Mode.
+                No AI key is configured, so {scenario.character.name}&apos;s replies are scripted (they still follow what you
+                say) and feedback is rule-based.
+                {voiceEngine === "none" ? " Voice input isn't supported in this browser — type your replies." : " You can still speak your replies."}
               </p>
             </div>
           )}
@@ -106,9 +110,10 @@ export function PreBrief({
             Start Conversation
           </Button>
           <p className="text-xs leading-relaxed text-slate">
-            {mode === "live"
-              ? "When you tap the mic, your browser will ask for permission. Your audio is sent for transcription and immediately discarded — we never store recordings. "
-              : ""}
+            {voiceEngine === "server" &&
+              "When you tap the mic, your browser will ask for permission. Your audio is sent for transcription and immediately discarded — we never store recordings. "}
+            {voiceEngine === "browser" &&
+              "When you tap the mic, your browser will ask for permission. Your browser's own speech service (Google in Chrome, Apple in Safari) turns your voice into text — we never receive or store the audio. "}
             You can type instead of speaking at any time.
           </p>
         </div>

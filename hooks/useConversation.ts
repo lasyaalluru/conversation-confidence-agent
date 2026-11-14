@@ -1,11 +1,27 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import type { AiMode, ApiError, ConversationResponse, TranscribeResponse } from "@/lib/ai/contract";
+import {
+  BrowserPushToTalk,
+  BrowserRecognitionError,
+  browserRecognitionErrorMessage,
+  isBrowserRecognitionSupported,
+} from "@/lib/audio/browser-recognition";
 import { PushToTalkRecorder, RecorderError, recorderErrorMessage, type Recording } from "@/lib/audio/recorder";
 import { speak, stopSpeaking } from "@/lib/audio/speech";
 import type { ComfortLevel, PlayableScenario } from "@/lib/scenarios/catalog";
 import type { ConversationTurn, SessionEvent, SessionEventType } from "@/types/domain";
+
+/**
+ * How the learner's voice becomes text:
+ *  - "server"  → MediaRecorder + /api/transcribe (OpenAI; needs OPENAI_API_KEY)
+ *  - "browser" → the browser's built-in speech recognition (Chrome/Edge/Safari; no key needed)
+ *  - "none"    → typing only (e.g. Firefox without a key)
+ */
+export type VoiceEngine = "server" | "browser" | "none";
+
+const noSubscribe = () => () => {};
 
 export type VoiceStatus = "idle" | "speaking" | "listening" | "transcribing" | "thinking" | "error";
 
@@ -30,7 +46,14 @@ async function errorMessage(res: Response, fallback: string): Promise<string> {
  * Guarantees: recording never overlaps AI playback, the mic is only opened by a user action,
  * and errors never lose the conversation so far (every failure offers a retry).
  */
-export function useConversation(scenario: PlayableScenario, level: ComfortLevel, initialMode: AiMode | null) {
+export function useConversation(
+  scenario: PlayableScenario,
+  level: ComfortLevel,
+  initialMode: AiMode | null,
+  serverTranscription: boolean | null,
+) {
+  const browserSupported = useSyncExternalStore(noSubscribe, isBrowserRecognitionSupported, () => false);
+  const voiceEngine: VoiceEngine = serverTranscription ? "server" : browserSupported ? "browser" : "none";
   const cfg = scenario.levels[level];
   const [turns, setTurns] = useState<ConversationTurn[]>([]);
   const [status, setStatus] = useState<VoiceStatus>("idle");
@@ -41,12 +64,16 @@ export function useConversation(scenario: PlayableScenario, level: ComfortLevel,
   const [mode, setMode] = useState<AiMode | null>(null);
   const [error, setError] = useState<{ message: string; retry?: () => void } | null>(null);
   const [micError, setMicError] = useState<string | null>(null);
+  /** Live words while the browser recognizer is listening. */
+  const [interim, setInterim] = useState("");
 
   const turnsRef = useRef<ConversationTurn[]>([]);
   const stageRef = useRef(stage);
   const eventsRef = useRef<SessionEvent[]>([]);
   const startedAtRef = useRef<string>("");
   const recorderRef = useRef<PushToTalkRecorder | null>(null);
+  const browserRef = useRef<BrowserPushToTalk | null>(null);
+  const recordStartRef = useRef(0);
   const busyRef = useRef(false);
   /** performance.now() of the latest spoken word boundary — drives the orb's speaking rhythm. */
   const lastBoundaryRef = useRef(0);
@@ -60,6 +87,7 @@ export function useConversation(scenario: PlayableScenario, level: ComfortLevel,
     return () => {
       mountedRef.current = false;
       recorderRef.current?.cancel();
+      browserRef.current?.cancel();
       stopSpeaking();
     };
   }, []);
@@ -198,6 +226,21 @@ export function useConversation(scenario: PlayableScenario, level: ComfortLevel,
     stopSpeaking(); // never record over the AI's voice
     setMicError(null);
     setError(null);
+    if (voiceEngine === "browser") {
+      browserRef.current = new BrowserPushToTalk((text) => setInterim(text));
+      setInterim("");
+      try {
+        setStatus("listening");
+        await browserRef.current.start();
+        recordStartRef.current = performance.now();
+        log("record_start");
+      } catch (e) {
+        browserRef.current = null;
+        setStatus("idle");
+        setMicError(browserRecognitionErrorMessage(e instanceof BrowserRecognitionError ? e.kind : "unsupported"));
+      }
+      return;
+    }
     recorderRef.current ??= new PushToTalkRecorder();
     try {
       await recorderRef.current.start();
@@ -207,9 +250,31 @@ export function useConversation(scenario: PlayableScenario, level: ComfortLevel,
       setStatus("idle");
       setMicError(e instanceof RecorderError ? recorderErrorMessage(e.kind) : recorderErrorMessage("unsupported"));
     }
-  }, [complete, log]);
+  }, [complete, log, voiceEngine]);
 
   const stopRecording = useCallback(async () => {
+    const browser = browserRef.current;
+    if (browser) {
+      browserRef.current = null;
+      setStatus("transcribing");
+      try {
+        const text = await browser.stop();
+        log("record_stop", performance.now() - recordStartRef.current);
+        setInterim("");
+        if (!text) {
+          setStatus("idle");
+          setError({ message: "We didn't catch that. Tap the mic, speak, then tap again when you're done — or type your reply." });
+          return;
+        }
+        setStatus("idle");
+        submitText(text, "voice");
+      } catch (e) {
+        setInterim("");
+        setStatus("idle");
+        setMicError(browserRecognitionErrorMessage(e instanceof BrowserRecognitionError ? e.kind : "unsupported"));
+      }
+      return;
+    }
     const recorder = recorderRef.current;
     if (!recorder?.isRecording) return;
     try {
@@ -224,7 +289,7 @@ export function useConversation(scenario: PlayableScenario, level: ComfortLevel,
     } catch {
       setStatus("idle");
     }
-  }, [log, transcribe]);
+  }, [log, transcribe, submitText]);
 
   const showHint = useCallback(() => {
     log("hint_requested");
@@ -240,6 +305,7 @@ export function useConversation(scenario: PlayableScenario, level: ComfortLevel,
 
   const finish = useCallback((): ConversationSnapshot => {
     recorderRef.current?.cancel();
+    browserRef.current?.cancel();
     stopSpeaking();
     log("session_end");
     return {
@@ -265,6 +331,8 @@ export function useConversation(scenario: PlayableScenario, level: ComfortLevel,
     mode: mode ?? initialMode,
     error,
     micError,
+    voiceEngine,
+    interim,
     start,
     submitText,
     startRecording,

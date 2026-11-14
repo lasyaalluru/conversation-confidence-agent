@@ -5,7 +5,7 @@
 An AI conversation coach for international students in the US who already know English but hesitate in real conversations. Learners pick a *comfort level* (not a test score), practice realistic spoken situations with an AI partner, get specific feedback on conversational moves (never on their accent), track honest progress, and take small real-world missions into their day.
 
 > **Status — working MVP.** The full journey works end-to-end: 3D landing → onboarding → café conversation (voice or text) → structured feedback → mission → dashboard → replay.
-> Without an OpenAI key it runs in a clearly labeled **Demo Mode** (scripted barista, rule-based feedback), so anyone can develop and demo for free.
+> Without an OpenAI key it runs in a clearly labeled **Demo Mode** (scripted barista, rule-based feedback), so anyone can develop and demo for free. **Voice works in both modes:** with a key, speech goes to OpenAI transcription; without one, the browser's built-in speech recognition is used (Chrome, Edge, Safari — Firefox falls back to typing).
 > Progress is saved in the browser for guests; optional email accounts sync via Supabase.
 
 ---
@@ -36,7 +36,7 @@ CI (`.github/workflows/ci.yml`) runs lint → typecheck → tests → build on e
 
 | Variable | Needed for | Notes |
 | --- | --- | --- |
-| `OPENAI_API_KEY` | Live AI conversation, voice transcription, AI feedback | **Server-only.** Empty → Demo Mode. Set a spending limit in the OpenAI dashboard. |
+| `OPENAI_API_KEY` | Live AI conversation, server transcription, AI feedback | **Server-only.** Empty → Demo Mode (voice still works via the browser). Set a spending limit in the OpenAI dashboard. |
 | `OPENAI_CONVERSATION_MODEL` / `OPENAI_FEEDBACK_MODEL` / `OPENAI_TRANSCRIBE_MODEL` | Optional overrides | Defaults: `gpt-5.4-mini`, `gpt-5.4-mini`, `gpt-transcribe` |
 | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Optional accounts + cross-device sync | Publishable key is safe in the browser; Row Level Security protects data |
 

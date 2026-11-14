@@ -8,7 +8,7 @@ import { VoiceOrb } from "./VoiceOrb";
 
 type Conversation = ReturnType<typeof useConversation>;
 
-function statusLabel(status: VoiceStatus, name: string, demoTyping: boolean): string {
+function statusLabel(status: VoiceStatus, name: string, typingOnly: boolean): string {
   switch (status) {
     case "speaking":
       return `${name} is speaking…`;
@@ -21,7 +21,7 @@ function statusLabel(status: VoiceStatus, name: string, demoTyping: boolean): st
     case "error":
       return "Something went wrong";
     default:
-      return demoTyping ? "Your turn — type your reply" : "Your turn — tap the mic and speak";
+      return typingOnly ? "Your turn — type your reply" : "Your turn — tap the mic and speak";
   }
 }
 
@@ -36,12 +36,12 @@ export function ConversationStage({
   convo: Conversation;
   onContinue: () => void;
 }) {
-  const { status, turns, hint, hintVisible, complete, error, micError, mode } = convo;
+  const { status, turns, hint, hintVisible, complete, error, micError, voiceEngine, interim } = convo;
   const [draft, setDraft] = useState("");
   const [showTranscript, setShowTranscript] = useState(true);
   const transcriptRef = useRef<HTMLOListElement>(null);
   const name = scenario.character.name;
-  const demo = mode === "demo";
+  const typingOnly = voiceEngine === "none";
   const lastAi = [...turns].reverse().find((t) => t.speaker === "ai");
   const busy = status === "thinking" || status === "transcribing";
   const listening = status === "listening";
@@ -62,8 +62,16 @@ export function ConversationStage({
         </div>
 
         <p role="status" aria-live="polite" className="mt-2 text-sm text-ivory/60">
-          {complete && status !== "speaking" ? "Conversation complete" : statusLabel(status, name, demo)}
+          {complete && status !== "speaking" ? "Conversation complete" : statusLabel(status, name, typingOnly)}
         </p>
+
+        {listening && interim && (
+          <p className="mt-3 max-w-xl text-center text-ivory/75" aria-live="polite">
+            <span className="text-xs uppercase tracking-[0.18em] text-sage">You&apos;re saying</span>
+            <br />
+            {interim}
+          </p>
+        )}
 
         <blockquote className="mt-5 min-h-[4.5rem] max-w-xl text-center font-display text-[clamp(1.5rem,3.2vw,2.15rem)] leading-snug text-ivory">
           {lastAi ? <>&ldquo;{lastAi.text}&rdquo;</> : null}
@@ -116,7 +124,7 @@ export function ConversationStage({
               <button
                 type="button"
                 onClick={listening ? convo.stopRecording : convo.startRecording}
-                disabled={busy || demo}
+                disabled={busy || typingOnly}
                 aria-pressed={listening}
                 aria-label={listening ? "Stop recording and send" : "Start recording your reply"}
                 className={`relative flex h-20 w-20 items-center justify-center rounded-full transition-all disabled:opacity-35 ${
@@ -149,7 +157,12 @@ export function ConversationStage({
                 Repeat
               </Button>
             </div>
-            {demo && <p className="text-xs text-ivory/45">Mic is off in Demo Mode — voice transcription needs an AI key.</p>}
+            {typingOnly && (
+              <p className="text-xs text-ivory/45">Voice input isn&apos;t supported in this browser — try Chrome, Edge or Safari, or type below.</p>
+            )}
+            {voiceEngine === "browser" && (
+              <p className="text-xs text-ivory/45">Tap the mic, speak, then tap again. Your browser&apos;s speech service turns it into text.</p>
+            )}
 
             <form
               className="flex w-full gap-2"
@@ -165,7 +178,7 @@ export function ConversationStage({
                 id="reply"
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
-                placeholder={demo ? "Type your reply…" : "Or type your reply…"}
+                placeholder={typingOnly ? "Type your reply…" : "Or type your reply…"}
                 autoComplete="off"
                 maxLength={500}
                 disabled={listening}
