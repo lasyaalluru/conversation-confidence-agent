@@ -99,55 +99,59 @@ end → POST /api/feedback (separate evaluator, schema) → store → /feedback/
 
 ## Implementation checklist
 
+`[x]` built and verified here (lint · typecheck · 31 unit tests · production build · Playwright run of the full journey on desktop and phone width, zero console errors) ·
+`[~]` built but needs live credentials / real devices to verify · `[ ]` not started
+
 ### Phase 0 — Reset scope
 - [x] Read brief, plan, 3D guide; write this plan
 - [x] Feature branch `feat/convoconfidence-mvp`
-- [ ] Remove Mandarin / next-intl; English-only; rename app to ConvoConfidence AI
-- [ ] Install three, motion, zod, @supabase/ssr, vitest
+- [x] Remove Mandarin / next-intl; English-only; rename app to ConvoConfidence AI
+- [x] Install three, motion, zod, @supabase/ssr, vitest
 
 ### Phase 1 — Foundation & visual identity
-- [ ] Design tokens, fonts, focus styles, reduced-motion base
-- [ ] UI primitives (Button, Card, Badge, Container, etc.) + app shell / nav
-- [ ] Scenario data model + catalog (5 categories) + coffee scenario × 3 comfort levels
-- [ ] 3D engine: procedural sculpture, materials, PMREM studio, post, adaptive quality
-- [ ] 3D: scroll cues, cursor/touch, CTA hover glow, explode layers, lifecycle & fallbacks
-- [ ] Landing page: hero + 5 sections + final CTA, scroll reveals, mobile layout
-- [ ] Onboarding (5 steps, guest)
-- [ ] Scenario library page
+- [x] Design tokens, fonts, focus styles, reduced-motion base
+- [x] UI primitives + app shell (desktop top nav, mobile bottom tab bar)
+- [x] Scenario data model + catalog (5 categories, 25 scenarios) + coffee scenario × 3 comfort levels
+- [x] 3D engine: procedural sculpture, physical materials, PMREM studio, bloom/ACES/grain, adaptive quality
+- [x] 3D: scroll cues (hold-then-move), cursor/touch tilt, CTA hover glow, exploded layers, lifecycle + disposal
+- [x] 3D fallbacks: reduced-motion still frames; no-WebGL CSS sculpture (both verified)
+- [x] Landing page: hero + 6 sections + final CTA, scroll-position reveals, phone layout
+- [x] Onboarding (5 steps, guest)
+- [x] Scenario library page
 
 ### Phase 2 — Conversation MVP
-- [ ] Zod contracts + validation + rate limit
-- [ ] Agent: comfort-adaptive instructions, structured turn, retry/timeout
-- [ ] Demo agent (deterministic, remembers order) — isolated
-- [ ] Recorder + level meter + speech synthesis (per-level rate)
-- [ ] Practice UI: pre-brief, voice orb states, transcript, mic/hint/repeat/text, end
-- [ ] Transcription route
+- [x] Zod contracts, request validation, body-size limits, per-IP rate limits
+- [x] Agent: comfort-adaptive instructions, strict structured output, re-validation, retry, timeouts, stage guards
+- [x] Demo agent (deterministic, remembers order + name, adapts by level) — isolated in `lib/ai/demo`
+- [x] Practice UI: pre-brief, voice orb states, transcript, mic/hint/repeat/text, end dialog, error + retry
+- [~] Recorder + real mic level + transcription route — code complete; needs an API key + real mic to verify
+- [~] Speech synthesis (per-level rate, word-boundary rhythm) — voice quality depends on device
 
 ### Phase 3 — Feedback & persistence
-- [ ] Feedback evaluator + schema + demo feedback
-- [ ] Feedback page (sections, save phrases, mission, confidence after, try again)
-- [ ] ProgressStore + LocalStore
-- [ ] Missions (tried / not yet / try again + reflection, ask on return)
-- [ ] Analytics utilities (deterministic) + future-metric registry
-- [ ] Recommendations (rule-based, explained, overridable)
-- [ ] Dashboard + progress charts (confidence trend, activity, by category, before/after)
-- [ ] Saved phrases page
-- [ ] Settings (level, goals, consent, export, delete)
-- [~] Supabase: migrations + RLS, auth (magic link), SupabaseStore
+- [x] Feedback evaluator (live) + rule-based demo feedback grounded in the transcript
+- [x] Feedback page: went well / try next time / alternatives / reflection / confidence after / try again / transcript
+- [x] ProgressStore + LocalStore (guest)
+- [x] Missions: tried / not yet / try again + reflection; dashboard check-in on return
+- [x] Deterministic analytics + speech-metric registry ("not measured yet" states)
+- [x] Rule-based recommendations with reasons; level override in pre-brief
+- [x] Dashboard + progress charts (validated palette, tooltips, table views), labeled sample-data preview
+- [x] Saved phrases page
+- [x] Settings: level, goals, consent toggles, export JSON, delete all
+- [~] Supabase: migration + RLS, magic-link auth, SupabaseStore, guest→account import — needs a live project
 
 ### Phase 4 — Refinement & testing
-- [ ] Unit tests (Vitest)
-- [ ] Lint, typecheck, build clean
-- [ ] Browser QA via Playwright: every route desktop + mobile, console errors, reduced-motion, no-WebGL
-- [ ] Full MVP journey run (demo mode)
-- [ ] GitHub Actions CI
-- [ ] README, CONTRIBUTING, ROADMAP, pilot guide updated
+- [x] Unit tests (Vitest, 31)
+- [x] Lint, typecheck, build clean
+- [x] Browser QA: every route desktop + phone; reduced motion; no WebGL; AI failure + retry; early end; 404s
+- [x] Full MVP journey run (Demo Mode)
+- [x] GitHub Actions CI
+- [x] README, CONTRIBUTING, ROADMAP, PILOT_GUIDE
 - [ ] Push branch, open PR, create backlog Issues
 
-### Needs your team (cannot be completed here)
-- [ ] Live OpenAI key test (real conversation + transcription)
+### Needs the team (cannot be completed here)
+- [ ] Live OpenAI key test (real conversation + transcription + AI feedback)
 - [ ] Create Supabase project, run migration, verify RLS with two accounts
-- [ ] Real-device mic tests: Chrome, Safari, iPhone
+- [ ] Real-device mic tests: Chrome, Safari, iPhone, Android
 - [ ] Accent-diverse testing + human review of feedback
 - [ ] Deploy to Vercel
-- [ ] 5-student pilot
+- [ ] 5-student pilot (docs/PILOT_GUIDE.md)

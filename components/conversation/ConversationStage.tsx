@@ -39,7 +39,7 @@ export function ConversationStage({
   const { status, turns, hint, hintVisible, complete, error, micError, mode } = convo;
   const [draft, setDraft] = useState("");
   const [showTranscript, setShowTranscript] = useState(true);
-  const transcriptEnd = useRef<HTMLDivElement>(null);
+  const transcriptRef = useRef<HTMLOListElement>(null);
   const name = scenario.character.name;
   const demo = mode === "demo";
   const lastAi = [...turns].reverse().find((t) => t.speaker === "ai");
@@ -47,8 +47,10 @@ export function ConversationStage({
   const listening = status === "listening";
   const hintsOffered = scenario.levels[level].hints === "offered";
 
+  // Scroll the transcript panel itself — never the page (that would hide the controls on phones).
   useEffect(() => {
-    transcriptEnd.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    const el = transcriptRef.current;
+    if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
   }, [turns.length]);
 
   return (
@@ -60,7 +62,7 @@ export function ConversationStage({
         </div>
 
         <p role="status" aria-live="polite" className="mt-2 text-sm text-ivory/60">
-          {statusLabel(status, name, demo)}
+          {complete && status !== "speaking" ? "Conversation complete" : statusLabel(status, name, demo)}
         </p>
 
         <blockquote className="mt-5 min-h-[4.5rem] max-w-xl text-center font-display text-[clamp(1.5rem,3.2vw,2.15rem)] leading-snug text-ivory">
@@ -192,7 +194,7 @@ export function ConversationStage({
           </button>
         </div>
         {showTranscript && (
-          <ol id="transcript" className="mt-4 flex flex-col gap-3 overflow-y-auto pr-1 text-[15px]">
+          <ol id="transcript" ref={transcriptRef} className="mt-4 flex max-h-[45svh] flex-col gap-3 overflow-y-auto pr-1 text-[15px] lg:max-h-none">
             {turns.map((t) => (
               <li key={t.sequence} className={`flex flex-col ${t.speaker === "user" ? "items-end" : "items-start"}`}>
                 <span className="mb-1 text-[11px] uppercase tracking-wider text-ivory/40">
@@ -207,7 +209,6 @@ export function ConversationStage({
                 </span>
               </li>
             ))}
-            <div ref={transcriptEnd} />
           </ol>
         )}
       </aside>

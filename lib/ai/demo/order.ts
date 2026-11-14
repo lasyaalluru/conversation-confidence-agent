@@ -73,6 +73,8 @@ export function extractName(text: string): string | null {
   return null;
 }
 
-export const RETURNED_QUESTION = /\b(how about you|what about you|and you|how are you|how're you|how's yours|how is yours|how's your|how is your|you\?|yourself)\b/i;
+// Note: `you?` is matched separately — `\b` never matches after a "?".
+export const RETURNED_QUESTION =
+  /\b(how about you|what about you|and you|how are you|how're you|how's yours|how is yours|how's your|how is your|yourself)\b|\byou\s*\?/i;
 export const POLITE = /\b(please|thank|thanks|appreciate|cheers)\b/i;
 export const CLOSING = /\b(thank|thanks|bye|have a (good|great|nice)|you too|appreciate|see you|cheers)\b/i;
