@@ -38,6 +38,9 @@ CI (`.github/workflows/ci.yml`) runs lint → typecheck → tests → build on e
 | --- | --- | --- |
 | `OPENAI_API_KEY` | Live AI conversation, server transcription, AI feedback | **Server-only.** Empty → Demo Mode (voice still works via the browser). Set a spending limit in the OpenAI dashboard. |
 | `OPENAI_CONVERSATION_MODEL` / `OPENAI_FEEDBACK_MODEL` / `OPENAI_TRANSCRIBE_MODEL` | Optional overrides | Defaults: `gpt-5.4-mini`, `gpt-5.4-mini`, `gpt-transcribe` |
+| `COHERE_API_KEY` | Live AI conversation + feedback via Cohere (alternative to OpenAI) | **Server-only.** Free trial keys work (~1,000 calls/month ≈ 120+ practice sessions; not for production/commercial use). Voice uses the browser's speech recognition. |
+| `COHERE_MODEL` | Optional override | Default `command-a-03-2025` |
+| `AI_PROVIDER` | Only if both keys are set | `openai` (default) or `cohere` |
 | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Optional accounts + cross-device sync | Publishable key is safe in the browser; Row Level Security protects data |
 
 ---
@@ -80,7 +83,7 @@ components/
 hooks/
   useConversation.ts             Conversation state machine (turns, stage, mic, speech, errors)
 lib/
-  ai/          contract.ts (zod + JSON schemas) · prompts.ts (pure) · agent.ts (server) · openai.ts · demo/
+  ai/          contract.ts (zod + JSON schemas) · prompts.ts (pure) · agent.ts (server) · llm.ts (provider switch) · providers/cohere.ts · openai.ts · demo/
   audio/       recorder.ts (MediaRecorder + level meter) · speech.ts (speech synthesis)
   scenarios/   types.ts · comfort-levels.ts · catalog.ts · ordering-coffee.ts
   analytics/   metrics.ts (deterministic) · registry.ts (future speech metrics + why they're hidden)
@@ -99,7 +102,7 @@ learner speaks ─▶ PushToTalkRecorder ─▶ POST /api/transcribe ─▶ text
                                                        │
 history + stage + comfort level ─▶ POST /api/conversation
    zod-validate ▸ rate-limit ▸ buildConversationInstructions(scenario, level)
-   ▸ OpenAI Responses (strict JSON schema) ▸ zod re-validate (1 retry) ▸ applyCompletionRules
+   ▸ OpenAI or Cohere structured output (lib/ai/llm.ts) ▸ zod re-validate (1 retry) ▸ applyCompletionRules
    ◀─ { reply, scenarioStage, isComplete, hint, learningObjective, mode }
 reply ─▶ speech synthesis (rate per level; word boundaries drive the orb)
 end ─▶ save session + mission ─▶ /feedback/[id] ─▶ POST /api/feedback (separate evaluator)

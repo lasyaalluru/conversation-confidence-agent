@@ -15,9 +15,9 @@ export function getOpenAI(): OpenAI | null {
   return client;
 }
 
-/** "live" when an API key is configured, otherwise the clearly-labeled demo mode. */
+/** "live" when an AI key (OpenAI or Cohere) is configured, otherwise the clearly-labeled demo mode. */
 export function aiMode(): AiMode {
-  return process.env.OPENAI_API_KEY ? "live" : "demo";
+  return process.env.OPENAI_API_KEY || process.env.COHERE_API_KEY ? "live" : "demo";
 }
 
 export const MODELS = {

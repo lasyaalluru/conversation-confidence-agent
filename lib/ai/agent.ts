@@ -14,7 +14,7 @@ import {
 } from "./contract";
 import { demoFeedback } from "./demo/feedback";
 import { demoTurn } from "./demo/barista";
-import { getOpenAI, MODELS } from "./openai";
+import { activeProvider, completeJson, providerModel } from "./llm";
 import {
   applyCompletionRules,
   buildConversationInput,
@@ -25,7 +25,7 @@ import {
 
 /**
  * AI orchestration. One conversational agent + a separate evaluator — no multi-agent framework.
- * Live mode uses OpenAI structured outputs and re-validates every response with zod.
+ * Live mode uses OpenAI or Cohere structured outputs (lib/ai/llm.ts) and re-validates every response with zod.
  * Demo mode (no API key) uses the isolated deterministic implementations in ./demo.
  */
 
@@ -37,17 +37,9 @@ async function structured<T>(params: {
   schema: object;
   validator: ZodType<T>;
 }): Promise<T> {
-  const openai = getOpenAI();
-  if (!openai) throw new Error("OpenAI is not configured");
-  // One retry on malformed output (network retries are handled by the SDK).
+  // One retry on malformed output.
   for (let attempt = 0; attempt < 2; attempt++) {
-    const response = await openai.responses.create({
-      model: params.model,
-      instructions: params.instructions,
-      input: params.input,
-      text: { format: { type: "json_schema", name: params.name, schema: params.schema as Record<string, unknown>, strict: true } },
-    });
-    const raw = response.output_text;
+    const raw = await completeJson(params);
     if (!raw?.trim()) continue;
     try {
       const parsed = params.validator.safeParse(JSON.parse(raw));
@@ -69,13 +61,13 @@ export async function generateTurn(params: {
   const { scenario, level, stage, history } = params;
   const userTurns = history.filter((m) => m.speaker === "user").length;
 
-  if (!getOpenAI()) {
+  if (!activeProvider()) {
     const turn = demoTurn(scenario, level, stage, history);
     return { ...applyCompletionRules(turn, scenario, stage, userTurns), mode: "demo" };
   }
 
   const turn = await structured({
-    model: MODELS.conversation,
+    model: providerModel("conversation"),
     instructions: buildConversationInstructions(scenario, level),
     input: buildConversationInput(history, stage, scenario),
     name: "conversation_turn",
@@ -94,11 +86,11 @@ export async function generateFeedback(params: {
   history: HistoryMessage[];
 }): Promise<FeedbackResponse> {
   const { scenario, level, history } = params;
-  if (!getOpenAI()) {
+  if (!activeProvider()) {
     return { ...demoFeedback(scenario, level, history), mode: "demo", version: FEEDBACK_VERSION };
   }
   const result = await structured({
-    model: MODELS.feedback,
+    model: providerModel("feedback"),
     instructions: buildFeedbackInstructions(scenario, level),
     input: buildFeedbackInput(history, scenario),
     name: "conversation_feedback",

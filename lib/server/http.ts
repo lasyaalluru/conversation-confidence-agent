@@ -46,7 +46,17 @@ export class TooLargeError extends Error {}
 export function aiFailure(err: unknown, context: string) {
   console.error(`[${context}]`, err);
   const name = (err as { name?: string })?.name ?? "";
-  if (name.includes("Timeout") || name === "AbortError") {
+  const status = (err as { status?: number })?.status;
+  if (status === 429) {
+    return apiError(
+      "rate_limited",
+      "The AI service's free limit was reached. Please wait a minute and try again — if it keeps happening, the monthly quota may be used up.",
+    );
+  }
+  if (status === 401 || status === 403) {
+    return apiError("ai_unavailable", "The AI service rejected our key. The team needs to check the API key in Vercel.");
+  }
+  if (name.includes("Timeout") || name === "AbortError" || name === "TimeoutError") {
     return apiError("timeout", "The AI partner took too long to respond. Please try again.");
   }
   if (err instanceof MalformedAiOutput) {

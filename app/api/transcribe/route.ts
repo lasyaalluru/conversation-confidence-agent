@@ -28,11 +28,9 @@ export async function POST(request: Request) {
 
   const openai = getOpenAI();
   if (!openai) {
-    // Demo mode cannot transcribe. Be honest about it instead of returning fake text.
-    return apiError(
-      "ai_unavailable",
-      "Voice transcription needs an OpenAI API key. In Demo Mode, please type your reply instead.",
-    );
+    // Server transcription needs OpenAI. Clients use the browser's speech recognition otherwise
+    // (see /api/status → transcription:false), so this is only reached by stale clients.
+    return apiError("ai_unavailable", "Server transcription isn't enabled. Please use your browser's voice input or type your reply.");
   }
 
   try {
