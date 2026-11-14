@@ -13,7 +13,7 @@ A bilingual (English + Mandarin) web app that helps people who already know a la
 **Prerequisites:** [Node.js](https://nodejs.org) 20.9+ (LTS recommended), Git, VS Code.
 
 ```bash
-git clone https://github.com/<OWNER>/conversation-confidence-agent.git
+git clone https://github.com/lasyaalluru/conversation-confidence-agent.git
 cd conversation-confidence-agent
 npm install
 cp .env.example .env.local     # optional: add OPENAI_API_KEY for real AI
